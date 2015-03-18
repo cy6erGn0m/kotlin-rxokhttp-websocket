@@ -11,13 +11,15 @@ import okio.BufferedSource
 import rx.Observer
 import rx.lang.kotlin.observable
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 fun <I> webSocketFactory(httpClient: OkHttpClient, request: Request, incoming: Observer<I>, reconnectOnEndOfStream: Boolean, pongs: Observer<Long>, messageHandler : (WebSocket.PayloadType, BufferedSource, Observer<I>) -> Unit) =
         observable<WebSocket> { socketConsumer ->
             val lastWebSocket = AtomicReference<WebSocket?>()
+            val configuredClient = httpClient.ensureConfiguration()
 
-            WebSocketCall.create(httpClient, request).enqueue(object : WebSocketListener {
+            WebSocketCall.create(configuredClient, request).enqueue(object : WebSocketListener {
                 override fun onOpen(webSocket: WebSocket?, request: Request?, response: Response?) {
                     if (response?.code() != 101) {
                         socketConsumer.onError(IOException("Failed to connect to websocket $request due to ${response?.code()} ${response?.message()}"))
