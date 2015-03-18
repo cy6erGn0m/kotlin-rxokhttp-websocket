@@ -21,10 +21,13 @@ val geoPositionObservable =
 // send it if location changed since last time
 // 
 // will automatically reconnect if loose connection
+val url = "ws://some-host:8080/some-path/some-endpoint-ws"
 val geoPositionWebSocket = OkHttpClient().
         newWebSocket<Any, GeoLocation>(
-                Request.Builder().url("ws://some-host:8080/some-path/some-endpoint-ws").build(),
-                geoPositionObservable.sample(5L, TimeUnit.SECONDS).distinctUntilChanged()
+                Request.Builder().url(url).build(),
+                geoPositionObservable
+                    .sample(5L, TimeUnit.SECONDS)
+                    .distinctUntilChanged()
         )
 
 ```
@@ -39,10 +42,15 @@ import rx.*
 import rx.lang.kotlin.*
 
 // class we use to keep tweet
-data class Tweet(val user : String, val login : String, val text : String, val tags : List<String>)
+data class Tweet(
+    val user : String,
+    val login : String,
+    val text : String,
+    val tags : List<String>
+    )
 
 val url = "ws://some-server:8080/mytwitterserver/my-websocket-endpoint"
-val twitterWebSocket = OkHttpClient().with { setWriteTimeout(15L, TimeUnit.MILLISECONDS) }.
+val twitterWebSocket = OkHttpClient().
         newWebSocket<Tweet, Any>(Request.Builder().url(url).build())
 
 // here we can subscribe console logger, UI or something else
