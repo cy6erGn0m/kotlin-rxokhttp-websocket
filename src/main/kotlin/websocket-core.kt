@@ -35,8 +35,8 @@ public fun JetSocketBuilder.open(): JetWebSocket {
                 subscribeOn(Schedulers.io()).
                 doOnSubscribe { state.onNext(WebSocketState.CONNECTING) }.
                 doOnError { closer.onError(it) }.
+                doOnCompleted { closer.onCompleted(); state.onNext(WebSocketState.CLOSED); jetSocket.closeSubject.onNext(CLOSE_NO_REASON) }.
                 retryWhen { it.flatMap(reconnectProvider) }.
-                doOnCompleted { closer.onCompleted(); state.onNext(WebSocketState.CLOSED) }.
                 subscribe { socket ->
                     state.onNext(WebSocketState.CONNECTED)
                     closer.onNext(socket)

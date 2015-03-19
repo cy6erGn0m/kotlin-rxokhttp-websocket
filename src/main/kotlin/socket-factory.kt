@@ -40,6 +40,7 @@ fun <I> webSocketFactory(httpClient: OkHttpClient,
                     if (reconnectOnEndOfStream) {
                         socketConsumer.onError(WebSocketClosedWithReasonIOException(CloseReason(CloseCodes.getCloseCode(code), reason ?: "")))
                     } else {
+                        socketConsumer.onCompleted()
                         incoming.onCompleted()
                     }
                 }

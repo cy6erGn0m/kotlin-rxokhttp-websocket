@@ -1,11 +1,14 @@
 package kotlinx.websocket.test
 
+import okio.Buffer
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer
 import org.junit.Rule
 import org.junit.rules.ExternalResource
+import rx.Observable
 import rx.lang.kotlin.ReplaySubject
+import rx.schedulers.Schedulers
 import java.net.ServerSocket
 import java.nio.ByteBuffer
 import java.util.WeakHashMap
@@ -41,6 +44,7 @@ private fun Session.getResource() = getResource(this.getContainer())
 [Rule]
 class ServerTestResource : ExternalResource() {
 
+    var toBeSent : Observable<String> = Observable.empty()
     val events = ReplaySubject<Pair<String, String?>>()
 
     val server = AtomicReference<Server?>()
@@ -85,6 +89,14 @@ class TestServerHandler {
     [OnOpen]
     fun onConnect(session : Session) {
         session.getResource().events.onNext("onOpen" to null)
+
+        session.getResource().toBeSent.subscribeOn(Schedulers.io()).subscribe {
+            if (it == "EOF") {
+                session.close(CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "EOF received"))
+            } else {
+                session.getBasicRemote().sendText(it)
+            }
+        }
     }
 
     [OnMessage]
