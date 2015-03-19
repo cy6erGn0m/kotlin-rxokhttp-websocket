@@ -10,6 +10,7 @@ import rx.lang.kotlin.PublishSubject
 import rx.lang.kotlin.subscriber
 import rx.subjects.Subject
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 public enum class WebSocketState {
     CREATED
@@ -22,6 +23,7 @@ public trait JetSocketBuilder {
     val request: Request
     val state: Observer<WebSocketState>
     val reconnectOnEndOfStream : Boolean
+    val reconnectProvider : (Throwable) -> Observable<*>
 }
 
 public trait JetSocketBuilderWithReader<I> : JetSocketBuilder {
@@ -39,6 +41,7 @@ public trait JetSocketDuplex<I, O> : JetSocketBuilderWithReader<I>, JetSocketBui
 data class JetSocketInput<I, O>(val client: OkHttpClient, override val request: Request) : JetSocketBuilder, JetSocketBuilderWithReader<I>, JetSocketBuilderWithWriter<O> {
     override var state: Observer<WebSocketState> = subscriber()
     override var reconnectOnEndOfStream : Boolean = true
+    override var reconnectProvider : (Throwable) -> Observable<*> = {Observable.timer(10L, TimeUnit.SECONDS)}
 
     override var consumer: Observer<I> = subscriber()
     override var decoder: (WebSocket.PayloadType, BufferedSource, Observer<I>) -> Unit = { t, b, o -> }
@@ -82,6 +85,9 @@ public fun <B : JetSocketBuilder> B.withStateObserver(stateObserver: Observer<We
 
 public fun <B : JetSocketBuilder> B.withReconnectOnEndOfStream(reconnect : Boolean): B =
         with<B, Any, Any>{ this.reconnectOnEndOfStream = reconnect }
+
+public fun <B : JetSocketBuilder> B.withReconnectProvider(reconnectProvider : (Throwable) -> Observable<*> ): B =
+        with<B, Any, Any>{ this.reconnectProvider = reconnectProvider }
 
 public class JetWebSocket {
     val closeSubject : Subject<CloseReason, CloseReason> = PublishSubject()
