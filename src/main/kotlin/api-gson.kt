@@ -10,7 +10,7 @@ import rx.Observer
 
 private fun <I> getGsonDecoder(clazz : Class<I>, gson : Gson) = { type: WebSocket.PayloadType, buffer: BufferedSource, consumer: Observer<I> ->
         when (type) {
-                WebSocket.PayloadType.TEXT -> consumer.onNext(gson.fromJson(buffer.inputStream().reader(Charsets.UTF_8), clazz))
+                WebSocket.PayloadType.TEXT -> consumer.onNext(gson.fromJson(buffer.inputStream().reader(Charsets.UTF_8).use {it.readText()}, clazz))
         }
 }
 
