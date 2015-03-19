@@ -39,11 +39,11 @@ public fun JetSocketBuilder.open(): JetWebSocket {
                 doOnCompleted { closer.onCompleted(); state.onNext(WebSocketState.CLOSED) }.
                 subscribe { socket ->
                     state.onNext(WebSocketState.CONNECTED)
+                    closer.onNext(socket)
                     subscribeSocket(socket, producer, jetSocket.closeSubject, encoder).putTo(outgoingSubscription)
                     subscribeSocket(socket, pinger, jetSocket.closeSubject) { s, o ->
                         s.sendPing(Buffer().writeUtf8("ping"))
                     }.putTo(pingerSubscription)
-                    closer.onNext(socket)
                 }
     }
 

@@ -6,8 +6,8 @@ import rx.Observer
 import rx.lang.kotlin.subscriber
 
 
-fun <O> subscribeSocket(socket: WebSocket, outgoing: Observable<O>, closeObserver : Observer<CloseReason>,  onMessage: (WebSocket, O) -> Unit) =
-        outgoing.doOnCompleted {
+fun <O> subscribeSocket(socket: WebSocket, producer: Observable<O>, closeObserver : Observer<CloseReason>,  onMessage: (WebSocket, O) -> Unit) =
+        producer.doOnCompleted {
             closeObserver.onNext(CLOSE_NO_REASON)
         }.unsafeSubscribe(subscriber<O>().onNext {
             onMessage(socket, it)
