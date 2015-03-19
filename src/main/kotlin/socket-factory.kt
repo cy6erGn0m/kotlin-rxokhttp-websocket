@@ -14,9 +14,13 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
-fun <I> webSocketFactory(httpClient: OkHttpClient, request: Request, incoming: Observer<I>, reconnectOnEndOfStream: Boolean, pongs: Observer<Long>, messageHandler : (WebSocket.PayloadType, BufferedSource, Observer<I>) -> Unit) =
+fun <I> webSocketFactory(httpClient: OkHttpClient,
+                         request: Request,
+                         incoming: Observer<I>,
+                         reconnectOnEndOfStream: Boolean,
+                         pongs: Observer<Long>,
+                         messageHandler : (WebSocket.PayloadType, BufferedSource, Observer<I>) -> Unit) =
         observable<WebSocket> { socketConsumer ->
-            val lastWebSocket = AtomicReference<WebSocket?>()
             val configuredClient = httpClient.ensureConfiguration()
 
             WebSocketCall.create(configuredClient, request).enqueue(object : WebSocketListener {
@@ -24,7 +28,6 @@ fun <I> webSocketFactory(httpClient: OkHttpClient, request: Request, incoming: O
                     if (response?.code() != 101) {
                         socketConsumer.onError(IOException("Failed to connect to websocket $request due to ${response?.code()} ${response?.message()}"))
                     } else {
-                        lastWebSocket.set(webSocket)
                         socketConsumer.onNext(webSocket)
                     }
                 }
@@ -35,14 +38,13 @@ fun <I> webSocketFactory(httpClient: OkHttpClient, request: Request, incoming: O
 
                 override fun onClose(code: Int, reason: String?) {
                     if (reconnectOnEndOfStream) {
-                        socketConsumer.onError(IOException("End of stream. Reconnect required"))
+                        socketConsumer.onError(WebSocketClosedWithReasonIOException(CloseReason(CloseCodes.getCloseCode(code), reason ?: "")))
                     } else {
                         incoming.onCompleted()
                     }
                 }
 
                 override fun onFailure(e: IOException?) {
-                    lastWebSocket.get()?.safeClose()
                     socketConsumer.onError(e)
                 }
 

@@ -1,58 +1,61 @@
 package kotlinx.websocket
 
-import com.squareup.okhttp.OkHttpClient
-import com.squareup.okhttp.Request
 import com.squareup.okhttp.ws.WebSocket
 import okio.Buffer
-import okio.BufferedSource
 import rx.Observable
 import rx.Observer
 import rx.Subscription
-import rx.lang.kotlin.BehaviourSubject
-import rx.lang.kotlin.PublishSubject
 import rx.lang.kotlin.subscriber
 import rx.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
-public fun <I, O> OkHttpClient.newWebSocket(
-        request: Request, outgoing: Observable<O>, reconnectOnEndOfStream: Boolean,
-        incomingHandler : (WebSocket.PayloadType, BufferedSource, Observer<I>) -> Unit,
-        outgoingHandler : (socket : WebSocket, obj : O) -> Unit
-): ReactiveWebSocket<I> =
-        BehaviourSubject(WebSocketState.CREATED).let { state ->
-            PublishSubject<I>().let { incoming ->
-                val pinger = Observable.timer(15L, 10L, TimeUnit.SECONDS).subscribeOn(Schedulers.newThread())
-                val outgoingSubscription = AtomicReference<Subscription?>()
-                val pingSubscription = AtomicReference<Subscription?>()
+public fun JetSocketBuilder.open(): JetWebSocket {
+    state.onNext(WebSocketState.CREATED)
+    val jetSocket = JetWebSocket()
 
-                val pongObserver = subscriber<Long>().onNext {
-                }
+    with<JetSocketBuilder, Any, Any> {
+        val closer = socketCloser()
+        val pinger = Observable.timer(15L, 10L, TimeUnit.SECONDS).subscribeOn(Schedulers.io())
+        val outgoingSubscription = AtomicReference<Subscription?>()
+        val pingerSubscription = AtomicReference<Subscription?>()
 
-                webSocketFactory(this@newWebSocket, request, incoming, reconnectOnEndOfStream, pongObserver, incomingHandler).
-                        subscribeOn(Schedulers.io()).
-                        doOnSubscribe {
-                            state.onNext(WebSocketState.CONNECTING)
-                        }.
-                        doOnError {
-                            outgoingSubscription.unsubscribe()
-                            pingSubscription.unsubscribe()
-                        }.
-                        retryWhen { it.flatMap { Observable.timer(5L, TimeUnit.SECONDS) } }.
-                        subscribe { socket ->
-                            state.onNext(WebSocketState.CONNECTED)
-                            subscribeSocket(socket, outgoing, incoming, state, outgoingHandler).putTo(outgoingSubscription)
-                            subscribeSocket(socket, pinger, incoming, state) { s, o ->
-                                s.sendPing(Buffer())
-                            }.putTo(pingSubscription)
-                        }
+        jetSocket.closeSubject.subscribeOn(Schedulers.io()).subscribe {
+            outgoingSubscription.unsubscribe()
+            pingerSubscription.unsubscribe()
 
-                incoming.doOnCompleted {
-                    outgoingSubscription.unsubscribe()
-                    pingSubscription.unsubscribe()
-                }
+            closer.onCompleted()
+            consumer.onCompleted()
 
-                ReactiveWebSocket(state.distinctUntilChanged(), incoming)
-            }
-
+            state.onNext(WebSocketState.CLOSED)
+            state.onCompleted()
         }
+
+        webSocketFactory(this.client, this.request, consumer, reconnectOnEndOfStream, subscriber(), decoder).
+                subscribeOn(Schedulers.io()).
+                doOnSubscribe { state.onNext(WebSocketState.CONNECTING) }.
+                doOnError { closer.onError(it) }.
+                retryWhen { it.flatMap { Observable.timer(5L, TimeUnit.SECONDS) } }.
+                doOnCompleted { closer.onCompleted(); state.onNext(WebSocketState.CLOSED) }.
+                subscribe { socket ->
+                    state.onNext(WebSocketState.CONNECTED)
+                    subscribeSocket(socket, producer, jetSocket.closeSubject, encoder).putTo(outgoingSubscription)
+                    subscribeSocket(socket, pinger, jetSocket.closeSubject) { s, o ->
+                        s.sendPing(Buffer().writeUtf8("ping"))
+                    }.putTo(pingerSubscription)
+                    closer.onNext(socket)
+                }
+    }
+
+    return jetSocket
+}
+
+private fun socketCloser(): Observer<WebSocket> = AtomicReference<WebSocket?>().let { prev ->
+    subscriber<WebSocket>().onNext { socket ->
+        prev.getAndSet(socket)?.safeClose()
+    }.onError {
+        prev.getAndSet(null)?.safeClose()
+    }.onCompleted {
+        prev.getAndSet(null)?.safeClose()
+    }
+}
