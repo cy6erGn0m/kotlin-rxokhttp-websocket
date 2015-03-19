@@ -23,6 +23,10 @@ repositories {
     }
 }
 
+sourceSets {
+    examples
+}
+
 dependencies {
     compile 'org.jetbrains.kotlin:kotlin-stdlib:0.1-SNAPSHOT'
     compile 'com.google.code.gson:gson:2.3.+'

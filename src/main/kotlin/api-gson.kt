@@ -18,11 +18,20 @@ private fun <O> getGsonEncoder(gson : Gson) = {  socket : WebSocket, out : O ->
         socket.sendMessage(WebSocket.PayloadType.TEXT, Buffer().writeUtf8(gson.toJson(out)))
 }
 
+public inline fun <reified I> JetSocketBuilder.withGsonConsumer(consumer: Observer<I>, gson : Gson = Gson()): JetSocketBuilderWithReader<I> =
+        withGsonConsumer(consumer, javaClass<I>(), gson)
+
 public fun <I> JetSocketBuilder.withGsonConsumer(consumer: Observer<I>, clazz : Class<I>, gson : Gson = Gson()): JetSocketBuilderWithReader<I> =
         with<JetSocketBuilderWithReader<I>, I, Any> { this.consumer = consumer; this.decoder = getGsonDecoder(clazz, gson) }
 
+public inline fun <reified I, O> JetSocketBuilderWithWriter<O>.withGsonConsumer(consumer: Observer<I>, gson : Gson = Gson()): JetSocketDuplex<I, O> =
+        withGsonConsumer(consumer, javaClass<I>(), gson)
+
 public fun <I, O> JetSocketBuilderWithWriter<O>.withGsonConsumer(consumer: Observer<I>, clazz : Class<I>, gson : Gson = Gson()): JetSocketDuplex<I, O> =
         with<JetSocketDuplex<I, O>, I, Any> { this.consumer = consumer; this.decoder = getGsonDecoder(clazz, gson) }
+
+public inline fun <reified I, O> JetSocketDuplex<I, O>.withGsonConsumer(consumer: Observer<I>, gson : Gson = Gson()): JetSocketDuplex<I, O> =
+        withGsonConsumer(consumer, javaClass<I>(), gson)
 
 public fun <I, O> JetSocketDuplex<I, O>.withGsonConsumer(consumer: Observer<I>, clazz : Class<I>, gson : Gson = Gson()): JetSocketDuplex<I, O> =
         with<JetSocketDuplex<I, O>, I, Any> { this.consumer = consumer; this.decoder = getGsonDecoder(clazz, gson) }
