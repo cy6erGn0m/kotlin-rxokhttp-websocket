@@ -9,27 +9,26 @@ import kotlinx.websocket.gson.*
 import com.squareup.okhttp.*
 import rx.*
 import rx.lang.kotlin.*
+import java.util.concurrent.TimeUnit
 
 // class we use to keep location, send and serialize to json
-data class GeoLocation(val lat : Double, val lon : Double)
+data class GeoLocation(val lat: Double, val lon: Double)
 
 // here is just dummy geoPositionObservable that produces random coordinates
-val geoPositionObservable = 
-    kotlin.sequence { GeoLocation(Math.random(), Math.random()) }.toObservable()
+val geoPositionObservable =
+        kotlin.sequence { GeoLocation(Math.random(), Math.random()) }.toObservable()
 
 // create web socket that will check location every 5 seconds and
 // send it if location changed since last time
-// 
+//
 // will automatically reconnect if loose connection
-val url = "ws://some-host:8080/some-path/some-endpoint-ws"
 val geoPositionWebSocket = OkHttpClient().
-        newWebSocket<Any, GeoLocation>(
-                Request.Builder().url(url).build(),
+        newWebSocket("ws://some-host:8080/ws").
+        withGsonProducer(
                 geoPositionObservable
-                    .sample(5L, TimeUnit.SECONDS)
-                    .distinctUntilChanged()
-        )
-
+                        .sample(5L, TimeUnit.SECONDS)
+                        .distinctUntilChanged()).
+        
 ```
 
 Another example to receive events from server on Twitter stream:
@@ -43,16 +42,19 @@ import rx.lang.kotlin.*
 
 // class we use to keep tweet
 data class Tweet(
-    val user : String,
-    val login : String,
-    val text : String,
-    val tags : List<String>
-    )
-
-val url = "ws://some-server:8080/mytwitterserver/my-websocket-endpoint"
-val twitterWebSocket = OkHttpClient().
-        newWebSocket<Tweet, Any>(Request.Builder().url(url).build())
+        val user : String,
+        val login : String,
+        val text : String,
+        val tags : List<String>
+)
 
 // here we can subscribe console logger, UI or something else
-val subscription = twitterWebSocket.incoming.subscribe(someSubscriber) 
+val observer = subscriber<Tweet>().
+        onNext { tweet -> println(tweet) }
+
+val twitterWebSocket = OkHttpClient().
+        newWebSocket("ws://some-server:8080/ws").
+        withGsonConsumer(observer).
+        open()
+
 ```
