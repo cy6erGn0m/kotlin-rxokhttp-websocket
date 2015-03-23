@@ -28,7 +28,7 @@ val geoPositionWebSocket = OkHttpClient().
                 geoPositionObservable
                         .sample(5L, TimeUnit.SECONDS)
                         .distinctUntilChanged()).
-        
+        open()
 ```
 
 Another example to receive events from server on Twitter stream:
