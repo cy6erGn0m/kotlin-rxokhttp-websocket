@@ -1,6 +1,12 @@
 # kotlin-rxokhttp-websocket
 WebSocket bindings for Kotlin and RxKotlin based on OkHttp and Gson
 
+## Motivation
+Do you even know how terrible it would be programming 
+websocket on client side to get it async and robust? This is my try to adopt reactive approach to building websocket 
+clients with RxJava/RxKotlin
+
+## Examples
 With with thing you can simply do
 
 ```kotlin
