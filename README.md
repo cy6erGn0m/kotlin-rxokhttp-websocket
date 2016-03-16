@@ -10,19 +10,18 @@ clients with RxJava/RxKotlin
 With this thing you can simply do like this
 
 ```kotlin
+import com.squareup.okhttp.*
 import kotlinx.websocket.*
 import kotlinx.websocket.gson.*
-import com.squareup.okhttp.*
-import rx.*
 import rx.lang.kotlin.*
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 
 // class we use to keep location, send and serialize to json
 data class GeoLocation(val lat: Double, val lon: Double)
 
 // here is just dummy geoPositionObservable that produces random coordinates
 val geoPositionObservable =
-        kotlin.sequence { GeoLocation(Math.random(), Math.random()) }.toObservable()
+        generateSequence { GeoLocation(Math.random(), Math.random()) }.toObservable()
 
 // create web socket that will check location every 5 seconds and
 // send it if location changed since last time
@@ -40,10 +39,9 @@ val geoPositionWebSocket = OkHttpClient().
 Another example to receive events from server on Twitter stream:
 
 ```kotlin
+import com.squareup.okhttp.*
 import kotlinx.websocket.*
 import kotlinx.websocket.gson.*
-import com.squareup.okhttp.*
-import rx.*
 import rx.lang.kotlin.*
 
 // class we use to keep tweet
@@ -62,5 +60,4 @@ val twitterWebSocket = OkHttpClient().
         newWebSocket("ws://some-server:8080/ws").
         withGsonConsumer(observer).
         open()
-
 ```

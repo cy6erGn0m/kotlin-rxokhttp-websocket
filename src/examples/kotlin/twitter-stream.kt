@@ -1,9 +1,8 @@
 package jetsocket.examples.twitter
 
+import com.squareup.okhttp.*
 import kotlinx.websocket.*
 import kotlinx.websocket.gson.*
-import com.squareup.okhttp.*
-import rx.*
 import rx.lang.kotlin.*
 
 // class we use to keep tweet

@@ -19,7 +19,9 @@ repositories {
 }
 
 sourceSets {
-    examples
+    examples {
+        compileClasspath += sourceSets.main.runtimeClasspath
+    }
 }
 
 dependencies {
