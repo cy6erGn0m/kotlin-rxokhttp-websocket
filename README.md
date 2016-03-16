@@ -1,4 +1,5 @@
-# kotlin-rxokhttp-websocket
+# kotlin-rxokhttp-websocket  [![kotlin-rxokhttp-websocket at gitpack](https://jitpack.io/v/cy6erGn0m/kotlin-rxokhttp-websocket.svg)](https://jitpack.io/#cy6erGn0m/kotlin-rxokhttp-websocket)
+
 WebSocket library for Kotlin and RxJava/RxKotlin based on OkHttp and Gson
 
 ## Motivation
