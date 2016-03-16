@@ -8,7 +8,8 @@ websocket on client side to get it async and robust? This is my try to adopt rea
 clients with RxJava/RxKotlin
 
 ## Examples
-With this thing you can simply do like this
+
+### WebSocket push example
 
 ```kotlin
 import com.squareup.okhttp.*
@@ -37,6 +38,7 @@ val geoPositionWebSocket = OkHttpClient().
         open()
 ```
 
+### WebSocket pull example
 Another example to receive events from server on Twitter stream:
 
 ```kotlin
@@ -62,3 +64,9 @@ val twitterWebSocket = OkHttpClient().
         withGsonConsumer(observer).
         open()
 ```
+
+Of course you can combine both pull and push
+
+
+Enjoy :)
+
