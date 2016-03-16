@@ -13,11 +13,11 @@ fun Subscription.putTo(reference: AtomicReference<Subscription?>) = reference.su
 
 fun OkHttpClient.ensureConfiguration() : OkHttpClient {
     var configuredClient = this
-    if (this.getConnectTimeout() == 0) {
+    if (this.connectTimeout == 0) {
         configuredClient = configuredClient.clone()
         configuredClient.setConnectTimeout(15L, TimeUnit.SECONDS)
     }
-    if (this.getWriteTimeout() == 0) {
+    if (this.writeTimeout == 0) {
         configuredClient = configuredClient.clone()
         configuredClient.setWriteTimeout(10L, TimeUnit.SECONDS)
     }

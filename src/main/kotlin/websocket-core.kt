@@ -10,13 +10,13 @@ import rx.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
-public fun JetSocketBuilder.open(): JetWebSocket {
+fun JetSocketBuilder.open(): JetWebSocket {
     state.onNext(WebSocketState.CREATED)
     val jetSocket = JetWebSocket()
 
     with<JetSocketBuilder, Any, Any> {
         val closer = socketCloser()
-        val pinger = Observable.timer(15L, 10L, TimeUnit.SECONDS).subscribeOn(Schedulers.io())
+        val pinger = Observable.interval(15L, 10L, TimeUnit.SECONDS).subscribeOn(Schedulers.io())
         val outgoingSubscription = AtomicReference<Subscription?>()
         val pingerSubscription = AtomicReference<Subscription?>()
 

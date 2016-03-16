@@ -1,35 +1,26 @@
 package kotlinx.websocket.test
 
-import com.squareup.okhttp.OkHttpClient
+import com.squareup.okhttp.*
 import kotlinx.websocket.*
-import kotlinx.websocket.gson.withGsonConsumer
-import kotlinx.websocket.gson.withGsonProducer
-import okio.Buffer
-import org.junit.Before
-import org.junit.Rule
-import rx.lang.kotlin.ReplaySubject
-import rx.lang.kotlin.subscriber
-import rx.lang.kotlin.toObservable
-import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.test.assertEquals
-import org.junit.Test as test
+import kotlinx.websocket.gson.*
+import org.junit.*
+import rx.lang.kotlin.*
+import java.util.concurrent.*
+import kotlin.test.*
 
-public class RegularTest {
-
-    public var server: ServerTestResource = ServerTestResource()
-        [Rule] get() = $server
-        set(ns) {
-            $server = ns;
-        }
+class RegularTest {
+    @get:Rule
+    var server: ServerTestResource = ServerTestResource()
 
     val allEvents = ReplaySubject<Pair<String, String?>>()
 
-    [Before]
+    @Before
     fun before() {
         server.events.subscribe(allEvents)
     }
 
-    test fun main() {
+    @Test
+    fun main() {
         var lastState: WebSocketState? = null
         val stateObserver = subscriber<WebSocketState>()
                 .onNext {
@@ -49,7 +40,8 @@ public class RegularTest {
         assertEquals(listOf("onOpen" to null, "onMessage" to "1", "onMessage" to "2", "onMessage" to "3", "onClose" to null), allEvents.toList().toBlocking().first())
     }
 
-    test fun receive() {
+    @Test
+    fun receive() {
         server.toBeSent = listOf("a", "b", "c", "EOF").toObservable()
 
         val received = CopyOnWriteArrayList<String>()
@@ -61,7 +53,7 @@ public class RegularTest {
         val stateObserver = ReplaySubject<WebSocketState>()
 
         val socket = OkHttpClient().newWebSocket("ws://localhost:${server.port}/ws")
-                .withGsonConsumer(consumer, javaClass<String>())
+                .withGsonConsumer(consumer, String::class)
                 .withStateObserver(stateObserver)
                 .withReconnectOnEndOfStream(false)
                 .open()

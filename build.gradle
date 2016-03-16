@@ -1,12 +1,9 @@
 buildscript {
     repositories {
         jcenter()
-        maven {
-            url 'http://oss.sonatype.org/content/repositories/snapshots'
-        }
     }
     dependencies {
-        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:0.1-SNAPSHOT'
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.0.0'
     }
 }
 
@@ -18,9 +15,7 @@ version = '1.0'
 
 repositories {
     mavenCentral()
-    maven {
-        url 'http://oss.sonatype.org/content/repositories/snapshots'
-    }
+    maven { url "https://jitpack.io" }
 }
 
 sourceSets {
@@ -28,11 +23,12 @@ sourceSets {
 }
 
 dependencies {
-    compile 'org.jetbrains.kotlin:kotlin-stdlib:0.1-SNAPSHOT'
+    compile 'org.jetbrains.kotlin:kotlin-stdlib:1.0.0'
     compile 'com.google.code.gson:gson:2.3.+'
     compile 'com.squareup.okhttp:okhttp-ws:2.3.+'
-    compile 'io.reactivex:rxjava:1.0.+'
+    compile 'com.github.reactivex:rxkotlin:v0.50'
 
+    testCompile 'org.jetbrains.kotlin:kotlin-test-junit:1.0.0'
     testCompile 'junit:junit:4.+'
     testCompile 'javax.websocket:javax.websocket-api:1.0'
     testCompile 'org.eclipse.jetty.websocket:javax-websocket-server-impl:9.2.7.v20150116'

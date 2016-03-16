@@ -1,24 +1,20 @@
 package kotlinx.websocket.test
 
-import okio.Buffer
-import org.eclipse.jetty.server.Server
-import org.eclipse.jetty.servlet.ServletContextHandler
-import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer
-import org.junit.Rule
-import org.junit.rules.ExternalResource
+import org.eclipse.jetty.server.*
+import org.eclipse.jetty.servlet.*
+import org.eclipse.jetty.websocket.jsr356.server.deploy.*
+import org.junit.rules.*
 import rx.Observable
-import rx.lang.kotlin.ReplaySubject
-import rx.schedulers.Schedulers
-import java.net.ServerSocket
-import java.nio.ByteBuffer
-import java.util.WeakHashMap
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.locks.ReentrantLock
+import rx.lang.kotlin.*
+import rx.schedulers.*
+import java.net.*
+import java.nio.*
+import java.util.*
+import java.util.concurrent.atomic.*
+import java.util.concurrent.locks.*
 import javax.websocket.*
-import javax.websocket.server.ServerEndpoint
-import kotlin.concurrent.withLock
+import javax.websocket.server.*
+import kotlin.concurrent.*
 
 private val testServerMapper = WeakHashMap<WebSocketContainer, ServerTestResource>()
 private val mapperLock = ReentrantLock()
@@ -39,9 +35,8 @@ private fun getResource(container : WebSocketContainer) = mapperLock.withLock {
     testServerMapper[container]!!
 }
 
-private fun Session.getResource() = getResource(this.getContainer())
+private fun Session.getResource() = getResource(this.container)
 
-[Rule]
 class ServerTestResource : ExternalResource() {
 
     var toBeSent : Observable<String> = Observable.empty()
@@ -59,11 +54,11 @@ class ServerTestResource : ExternalResource() {
         val server = Server(port)
 
         val handler = ServletContextHandler(ServletContextHandler.SESSIONS)
-        handler.setContextPath("/")
-        server.setHandler(handler)
+        handler.contextPath = "/"
+        server.handler = handler
 
         val wsContainer = WebSocketServerContainerInitializer.configureContext(handler);
-        wsContainer.addEndpoint(javaClass<TestServerHandler>())
+        wsContainer.addEndpoint(TestServerHandler::class.java)
 
         server.start()
 
@@ -81,12 +76,12 @@ class ServerTestResource : ExternalResource() {
         events.onCompleted()
     }
 
-    private fun guessFreePort() : Int = ServerSocket(0).use { it.getLocalPort() }
+    private fun guessFreePort() : Int = ServerSocket(0).use { it.localPort }
 }
 
-[ServerEndpoint(value="/ws")]
+@ServerEndpoint(value="/ws")
 class TestServerHandler {
-    [OnOpen]
+    @OnOpen
     fun onConnect(session : Session) {
         session.getResource().events.onNext("onOpen" to null)
 
@@ -94,32 +89,32 @@ class TestServerHandler {
             if (it == "EOF") {
                 session.close(CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "EOF received"))
             } else {
-                session.getBasicRemote().sendText(it)
+                session.basicRemote.sendText(it)
             }
         }
     }
 
-    [OnMessage]
+    @OnMessage
     fun onMessage(session : Session, text : String) {
         session.getResource().events.onNext("onMessage" to text)
     }
 
-    [OnMessage]
+    @OnMessage
     fun onMessage(session : Session, bytes : ByteBuffer) {
         session.getResource().events.onNext("onMessage" to bytes.toString())
     }
 
-    [OnMessage]
+    @OnMessage
     fun onPing(session : Session, bytes : PongMessage) {
         session.getResource().events.onNext("ping/pong" to null)
     }
 
-    [OnClose]
+    @OnClose
     fun onClose(session : Session) {
         session.getResource().events.onNext("onClose" to null)
     }
 
-    [OnError]
+    @OnError
     fun onError(session : Session, error : Throwable) {
         session.getResource().events.onNext("onError" to error.toString())
     }
