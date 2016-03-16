@@ -7,6 +7,9 @@ Do you even know how terrible it would be programming
 websocket on client side to get it async and robust? This is my try to adopt reactive approach to building websocket 
 clients with RxJava/RxKotlin
 
+# Getting started
+You can include the library using jitpack repo to Gradle and Maven. Follow instructions here https://jitpack.io/#cy6erGn0m/kotlin-rxokhttp-websocket
+
 ## Examples
 
 ### WebSocket push example
